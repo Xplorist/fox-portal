@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foxconn.mcebg.portal.mapper.follow.MatomoMapper">
+    <!-- MatomoMapper【01】查询某系统某天的访问量 -->
+    <!--suppress SqlResolve -->
+    <select id="queryAccessSum" resultType="Long">
+<!--
+        select
+            count(v.idvisit)
+        from
+            matomo_log_visit v,
+            matomo_site s
+        where
+            v.idsite = s.idsite
+          and s.main_url = #{systemUrl}
+          and date(convert_tz(v.visit_first_action_time, '+00:00', '+08:00')) = #{theDate}
+-->
+        SELECT
+        count( v.idlink_va )
+        FROM
+        matomo_log_link_visit_action v,
+        matomo_site s
+        WHERE
+        v.idsite = s.idsite
+        AND s.main_url = #{systemUrl}
+        AND date( convert_tz( v.server_time, '+00:00', '+08:00' ) ) = #{theDate}
+    </select>
+
+    <!-- MatomoMapper【02】查询某系统某段时间的访问量 -->
+    <!--suppress SqlResolve -->
+    <select id="queryAccessSumByTimePeriod" resultType="Long">
+<!--
+        select
+        count(v.idvisit)
+        from
+        matomo_log_visit v,
+        matomo_site s
+        where
+        v.idsite = s.idsite
+        and s.main_url = #{systemUrl}
+        and date(convert_tz(v.visit_first_action_time, '+00:00', '+08:00')) >= #{startDate}
+        and date(convert_tz(v.visit_first_action_time, '+00:00', '+08:00')) &lt; #{endDate}
+-->
+        SELECT
+        count( v.idlink_va )
+        FROM
+        matomo_log_link_visit_action v,
+        matomo_site s
+        WHERE
+        v.idsite = s.idsite
+        AND s.main_url = #{systemUrl}
+        AND date( convert_tz( v.server_time, '+00:00', '+08:00' ) ) >= #{startDate}
+        AND date( convert_tz( v.server_time, '+00:00', '+08:00' ) ) &lt; #{endDate}
+    </select>
+
+    <!-- MatomoMapper【03】查询某系统某天的某种设备使用数量（设备类型： PC，mobile） -->
+    <!--suppress SqlResolve -->
+    <select id="queryDeviceSum" resultType="Long">
+        SELECT
+            count( t.idvisitor )
+        FROM
+            (
+                SELECT
+                    v.idvisitor
+                FROM
+                    matomo_log_visit v,
+                    matomo_site s
+                WHERE
+                    v.idsite = s.idsite
+                <if test='deviceType == "PC"'>
+                    AND v.config_device_type = 0
+                </if>
+                <if test='deviceType == "mobile"'>
+                    AND v.config_device_type &lt;> 0
+                </if>
+                  AND s.main_url = #{systemUrl}
+                  AND date( convert_tz( v.visit_first_action_time, '+00:00', '+08:00' ) ) = #{theDate}
+        GROUP BY
+            v.idvisitor
+            ) t
+    </select>
+
+    <!-- MatomoMapper【04】查询某系统某段时间某种设备使用数量（设备类型： PC，mobile） -->
+    <!--suppress SqlResolve -->
+    <select id="queryDeviceSumByTimePeriod" resultType="Long">
+        SELECT
+        count( t.idvisitor )
+        FROM
+        (
+        SELECT
+        v.idvisitor
+        FROM
+        matomo_log_visit v,
+        matomo_site s
+        WHERE
+        v.idsite = s.idsite
+        <if test='deviceType == "PC"'>
+            AND v.config_device_type = 0
+        </if>
+        <if test='deviceType == "mobile"'>
+            AND v.config_device_type &lt;> 0
+        </if>
+        AND s.main_url = #{systemUrl}
+        AND date( convert_tz( v.visit_first_action_time, '+00:00', '+08:00' ) ) >= #{startDate}
+        AND date( convert_tz( v.visit_first_action_time, '+00:00', '+08:00' ) ) &lt; #{endDate}
+        GROUP BY
+        v.idvisitor
+        ) t
+    </select>
+
+    <!-- MatomoMapper【05】查询某系统截止某日期某种设备的所有用户list -->
+    <!--suppress SqlResolve -->
+    <select id="listAllUser" resultType="String">
+        SELECT
+            v.user_id
+        FROM
+            matomo_log_visit v,
+        <if test='queryType == "app" and systemNumType == 2'>
+            matomo_log_action a,
+            matomo_log_link_visit_action va,
+        </if>
+            matomo_site s
+        where
+            v.idsite = s.idsite
+        <if test='queryType == "system"'>
+            and s.main_url = #{systemUrl}
+        </if>
+        <if test='queryType == "app"'>
+            and s.idsite = #{appSiteId}
+        </if>
+        <if test='queryType == "app" and systemNumType == 2'>
+            and v.idvisit = va.idvisit
+            and va.idaction_event_category = a.idaction
+            and a.name = #{systemUrl}
+        </if>
+        <if test='dateType == "theDate"'>
+            and date(convert_tz(v.visit_first_action_time,
+            '+00:00',
+            '+08:00')) &lt;= #{theDate}
+        </if>
+        <if test='dateType == "timePeriod"'>
+            and date(convert_tz(v.visit_first_action_time,
+            '+00:00',
+            '+08:00')) &lt;= #{endDate}
+        </if>
+        <if test='deviceType == "pc"'>
+            and v.config_device_type = 0
+        </if>
+        <if test='deviceType == "mobile"'>
+            and v.config_device_type &lt;&gt; 0
+        </if>
+          and v.user_id is not null
+        group by
+            v.user_id
+        order by
+            v.user_id
+    </select>
+
+    <!-- MatomoMapper【06】查询某系统某天或某段时间某种设备的活跃用户list -->
+    <!--suppress SqlResolve -->
+    <select id="listActiveUser" parameterType="com.foxconn.mcebg.portal.model.query.MatomoMapperQuery" resultType="String">
+        SELECT
+            v.user_id
+        FROM
+            matomo_log_visit v,
+             <if test='queryType == "app" and systemNumType == 2'>
+                 matomo_log_action a,
+                 matomo_log_link_visit_action va,
+             </if>
+            matomo_site s
+        where
+            v.idsite = s.idsite
+        <if test='queryType == "system"'>
+            and s.main_url = #{systemUrl}
+        </if>
+        <if test='queryType == "app"'>
+            and s.idsite = #{appSiteId}
+        </if>
+        <if test='queryType == "app" and systemNumType == 2'>
+            and v.idvisit = va.idvisit
+            and va.idaction_event_category = a.idaction
+            and a.name = #{systemUrl}
+        </if>
+        <if test='dateType == "theDate"'>
+            and date(convert_tz(v.visit_first_action_time,
+            '+00:00',
+            '+08:00')) = #{theDate}
+        </if>
+        <if test='dateType == "timePeriod"'>
+            and date(convert_tz(v.visit_first_action_time,
+            '+00:00',
+            '+08:00')) >= #{startDate}
+            and date(convert_tz(v.visit_first_action_time,
+            '+00:00',
+            '+08:00')) &lt; #{endDate}
+        </if>
+        <if test='deviceType == "pc"'>
+            and v.config_device_type = 0
+        </if>
+        <if test='deviceType == "mobile"'>
+            and v.config_device_type &lt;&gt; 0
+        </if>
+          and v.user_id is not null
+        group by
+            v.user_id
+        order by
+            v.user_id
+    </select>
+
+    <!-- MatomoMapper【07】查询某系统某天或某段时间某种设备的访问量 -->
+    <!--suppress SqlResolve -->
+    <select id="queryTheAccessSum" parameterType="com.foxconn.mcebg.portal.model.query.MatomoMapperQuery" resultType="Long">
+        select
+            count(t.idlink_va) access_sum
+        from
+            (
+                SELECT
+                    va.idlink_va
+                FROM
+                    matomo_log_visit v,
+                    matomo_site s,
+                     <if test='queryType == "app" and systemNumType == 2'>
+                         matomo_log_action a,
+                     </if>
+                    matomo_log_link_visit_action va
+                where
+                    v.idsite = s.idsite
+                <if test='queryType == "system"'>
+                    and s.main_url = #{systemUrl}
+                </if>
+                <if test='queryType == "app"'>
+                    and s.idsite = #{appSiteId}
+                </if>
+                <if test='queryType == "app" and systemNumType == 2'>
+                    and va.idaction_event_category = a.idaction
+                    and a.name = #{systemUrl}
+                </if>
+                  and v.idvisit = va.idvisit
+                <if test='dateType == "theDate"'>
+                  and date(convert_tz(va.server_time,
+                    '+00:00',
+                    '+08:00')) = #{theDate}
+                </if>
+                <if test='dateType == "timePeriod"'>
+                    and date(convert_tz(va.server_time,
+                    '+00:00',
+                    '+08:00')) >= #{startDate}
+                    and date(convert_tz(va.server_time,
+                    '+00:00',
+                    '+08:00')) &lt; #{endDate}
+                </if>
+        <if test='deviceType == "pc"'>
+            and v.config_device_type = 0
+        </if>
+        <if test='deviceType == "mobile"'>
+            and v.config_device_type &lt;&gt; 0
+        </if>
+		 ) t
+    </select>
+
+    <!-- MatomoMapper【08】查询某系统某天或某段时间某种设备的活跃设备list -->
+    <!--suppress SqlResolve -->
+    <select id="listActiveDevice" parameterType="com.foxconn.mcebg.portal.model.query.MatomoMapperQuery" resultType="String">
+        SELECT
+            hex(v.idvisitor)
+        FROM
+            matomo_log_visit v,
+        <if test='queryType == "app" and systemNumType == 2'>
+            matomo_log_action a,
+            matomo_log_link_visit_action va,
+        </if>
+            matomo_site s
+        where
+            v.idsite = s.idsite
+        <if test='queryType == "system"'>
+            and s.main_url = #{systemUrl}
+        </if>
+        <if test='queryType == "app"'>
+            and s.idsite = #{appSiteId}
+        </if>
+        <if test='queryType == "app" and systemNumType == 2'>
+            and v.idvisit = va.idvisit
+            and va.idaction_event_category = a.idaction
+            and a.name = #{systemUrl}
+        </if>
+        <if test='dateType == "theDate"'>
+          and date(convert_tz(v.visit_first_action_time,
+            '+00:00',
+            '+08:00')) = #{theDate}
+        </if>
+        <if test='dateType == "timePeriod"'>
+            and date(convert_tz(v.visit_first_action_time,
+            '+00:00',
+            '+08:00')) >= #{startDate}
+            and date(convert_tz(v.visit_first_action_time,
+            '+00:00',
+            '+08:00')) &lt; #{endDate}
+        </if>
+        <if test='deviceType == "pc"'>
+            and v.config_device_type = 0
+        </if>
+        <if test='deviceType == "mobile"'>
+            and v.config_device_type &lt;&gt; 0
+        </if>
+        and v.user_id is not null
+        group by
+            v.idvisitor
+        order by
+            v.idvisitor
+    </select>
+
+    <!-- MatomoMapper【09】查询某系统某天某用户某种设备的访问量 -->
+    <!--suppress SqlResolve -->
+    <select id="queryAccessSumByUserId" resultType="Long">
+        select
+            count(t.idlink_va)
+        from
+            (
+                SELECT
+                    va.idlink_va
+                FROM
+                    matomo_site s,
+                    matomo_log_visit v,
+                    matomo_log_link_visit_action va
+                where
+                    s.idsite = v.idsite
+                  and v.idvisit = va.idvisit
+                  and s.main_url = #{systemUrl}
+                  and date(convert_tz(v.visit_first_action_time,
+                    '+00:00',
+                    '+08:00')) = #{theDate}
+		          and v.user_id = #{userId}
+                <if test='deviceType == "pc"'>
+                    and v.config_device_type = 0
+                </if>
+                <if test='deviceType == "mobile"'>
+                    and v.config_device_type &lt;&gt; 0
+                </if>
+		) t
+    </select>
+
+    <!-- MatomoMapper【10】查询某系统截止某日期某种设备的所有设备list -->
+    <!--suppress SqlResolve -->
+    <select id="listAllDevice" parameterType="com.foxconn.mcebg.portal.model.query.MatomoMapperQuery" resultType="String">
+        SELECT
+            hex(v.idvisitor)
+        FROM
+        matomo_log_visit v,
+        <if test='queryType == "app" and systemNumType == 2'>
+            matomo_log_action a,
+            matomo_log_link_visit_action va,
+        </if>
+        matomo_site s
+        where
+        v.idsite = s.idsite
+        <if test='queryType == "system"'>
+            and s.main_url = #{systemUrl}
+        </if>
+        <if test='queryType == "app"'>
+            and s.idsite = #{appSiteId}
+        </if>
+        <if test='queryType == "app" and systemNumType == 2'>
+            and v.idvisit = va.idvisit
+            and va.idaction_event_category = a.idaction
+            and a.name = #{systemUrl}
+        </if>
+        <if test='dateType == "theDate"'>
+            and date(convert_tz(v.visit_first_action_time,
+            '+00:00',
+            '+08:00')) &lt;= #{theDate}
+        </if>
+        <if test='dateType == "timePeriod"'>
+            and date(convert_tz(v.visit_first_action_time,
+            '+00:00',
+            '+08:00')) &lt;= #{endDate}
+        </if>
+        <if test='deviceType == "pc"'>
+            and v.config_device_type = 0
+        </if>
+        <if test='deviceType == "mobile"'>
+            and v.config_device_type &lt;&gt; 0
+        </if>
+        and v.user_id is not null
+        group by
+            v.idvisitor
+        order by
+            v.idvisitor
+    </select>
+
+    <!-- MatomoMapper【11】查询设备信息 -->
+    <!--suppress SqlResolve -->
+    <select id="queryDeviceInfo" parameterType="String" resultType="com.foxconn.mcebg.portal.model.dto.DeviceInfoDTO">
+        select
+            hex(v.idvisitor) device_id,
+            s.name last_login_site_name,
+            v.user_id last_login_user_id,
+            convert_tz(v.visit_first_action_time, '+00:00', '+08:00') last_login_time,
+            v.config_os os_type,
+            v.config_os_version os_version,
+            v.config_resolution resolution
+        from
+            matomo_log_visit v,
+            matomo_site s
+        where
+                v.idvisit = (
+                SELECT
+                    max(idvisit)
+                FROM
+                    matomo_log_visit
+                where
+                    hex(idvisitor) = #{deviceId}
+                  and user_id is not null
+                order by
+                    visit_first_action_time desc)
+          and v.idsite = s.idsite
+    </select>
+
+    <!-- MatomoMapper【12】查询设备AppId -->
+    <!--suppress SqlResolve -->
+    <select id="queryDeviceAppId" parameterType="String" resultType="String">
+        select
+            va.custom_dimension_1
+        from
+            matomo_log_link_visit_action va
+        where va.idlink_va = (
+            SELECT
+                max(idlink_va)
+            FROM
+                matomo_log_link_visit_action
+            where
+                hex(idvisitor) = #{deviceId}
+            order by
+                server_time desc
+        )
+    </select>
+
+    <!-- 模板 -->
+</mapper>

@@ -1,0 +1,10 @@
+10.244.231.91_XTWL
+
+sysdba
+
+grant CREATE PUBLIC DATABASE LINK,DROP PUBLIC DATABASE LINK to SYSTEMPORTAL; 
+
+
+create public database link human_db    
+connect to humattendv2 identified by "humattendv2.8091"
+ using '(DESCRIPTION =(ADDRESS_LIST =(ADDRESS =(PROTOCOL = TCP)(HOST = 10.244.231.91)(PORT = 1521)))(CONNECT_DATA =(SERVICE_NAME = XTWL)))';

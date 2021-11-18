@@ -1,0 +1,69 @@
+.content {
+  width: calc(100% + 50px);
+  margin: 0 -25px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.box {
+  width: 25%;
+  min-width: 300px;
+  height: 70px;
+  padding: 0 25px;
+  margin: 15px 0;
+  position: relative;
+}
+
+.card {
+  background-color: #ffffff;
+  padding: 15px;
+  color: #383E49;
+}
+
+.box:hover .control-box {
+  opacity: 1;
+}
+
+.control-box {
+  width: 100%;
+  height: 78px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0 25px;
+  opacity: 0;
+  transition: opacity .5s;
+}
+
+.control-body {
+  background: #D2D2D2;
+  opacity: .9;
+  height: 100%;
+  border: 1px solid #0058FF;
+  border-radius: 2px;
+  display: flex;
+}
+
+.control-col {
+  width: 50%;
+  padding-top: 15px;
+  text-align: center;
+  color: #383E49;
+  cursor: pointer;
+}
+
+.icon {
+  float: left;
+  height: 40px;
+  margin-right: 14px;
+  margin-top: 2px;
+}
+
+.title {
+  font-size: 14px;
+}
+
+.muted {
+  color: #818896;
+  font-size: 12px;
+}

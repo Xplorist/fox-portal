@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foxconn.systemportal.mapper.StatisticMapper">
+    <!-- StatisticMapper【01】查询某系统截止某天总用户数量 -->
+    <select id="queryRegisterUserSum" resultType="Long">
+        select count(*)
+        from REGISTER_USER t
+        where t.system_info_id = #{systemId}
+        and trunc(t.register_date) &lt;= to_date(#{theDate}, 'yyyy-MM-dd')
+    </select>
+
+    <!-- StatisticMapper【02】查询某系统某天活跃用户数量 -->
+    <select id="queryActiveUserSum" resultType="Long">
+        select count(*)
+        from (
+                 select t.emp_id
+                 from ACTIVE_USER t
+                 where t.system_info_id = #{systemId}
+                   and trunc(t.active_date) = to_date(#{theDate}, 'yyyy-MM-dd')
+                 group by t.emp_id
+             )
+    </select>
+
+    <!-- StatisticMapper【03】查询某系统某个时间段内活跃用户数量 -->
+    <select id="queryActiveUserSumByTimePeriod" resultType="Long">
+        select count(*)
+        from (
+        select t.emp_id from ACTIVE_USER t
+        where t.system_info_id = #{systemId}
+        and t.active_date >= to_date(#{startDate}, 'yyyy-MM-dd')
+        and t.active_date &lt;  to_date(#{endDate}, 'yyyy-MM-dd')
+        group by t.emp_id
+        )
+    </select>
+
+    <!-- 模板 -->
+</mapper>

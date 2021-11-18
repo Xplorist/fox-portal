@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.foxconn.mcebg.portal.mapper.base.StatisticMapper">
+    <!-- StatisticMapper【01】查询某系统截止某天总用户数量 -->
+    <select id="queryRegisterUserSum" resultType="Long">
+        select count(*)
+        from REGISTER_USER t
+        where t.system_info_id = #{systemId}
+        and trunc(t.register_date) &lt;= to_date(#{theDate}, 'yyyy-MM-dd')
+    </select>
+
+    <!-- StatisticMapper【02】查询某系统某天活跃用户数量 -->
+    <select id="queryActiveUserSum" resultType="Long">
+        select count(*)
+        from (
+                 select t.emp_id
+                 from ACTIVE_USER t, REGISTER_USER x
+                 where t.emp_id = x.emp_id
+                   and x.system_info_id = #{systemId}
+                   and t.system_info_id = #{systemId}
+                   and trunc(x.register_date) &lt;= to_date(#{theDate}, 'yyyy-MM-dd')
+                   and trunc(t.active_date) = to_date(#{theDate}, 'yyyy-MM-dd')
+                 group by t.emp_id
+             )
+    </select>
+
+    <!-- StatisticMapper【03】查询某系统某个时间段内活跃用户数量 -->
+    <select id="queryActiveUserSumByTimePeriod" resultType="Long">
+        select count(*)
+        from (
+                select t.emp_id
+                  from ACTIVE_USER t, REGISTER_USER x
+                where t.emp_id = x.emp_id
+                  and x.system_info_id = #{systemId}
+                  and t.system_info_id = #{systemId}
+                  and trunc(x.register_date) &lt; to_date(#{endDate}, 'yyyy-MM-dd')
+                  and t.active_date >= to_date(#{startDate}, 'yyyy-MM-dd')
+                  and t.active_date &lt;  to_date(#{endDate}, 'yyyy-MM-dd')
+                group by t.emp_id
+            )
+    </select>
+
+    <!-- StatisticMapper【04】查询系统主管list -->
+    <select id="listSystemVip" parameterType="String" resultType="com.foxconn.mcebg.portal.model.dto.SystemVipDTO">
+        select t.id,
+               t.system_info_id,
+               t.emp_id,
+               t.emp_name,
+               t.create_time,
+               t.valid_flag,
+               t.list_order
+        from SYSTEM_VIP t
+        where t.system_info_id = #{systemId}
+          and t.valid_flag = 1
+        order by t.list_order asc
+    </select>
+
+    <!-- StatisticMapper【05】查询某系统某天某主管的访问次数 -->
+    <select id="queryVipAccessNum" resultType="Long">
+        select count(*)
+        from ACTIVE_USER t
+        where t.emp_id = #{empId}
+          and t.system_info_id = #{systemId}
+          and trunc(t.active_date) = to_date(#{theDate}, 'yyyy-MM-dd')
+        order by t.active_date desc
+    </select>
+
+    <!-- StatisticMapper【06】查询某系统某天的活跃用户 -->
+    <select id="listActiveUser" resultType="String">
+        select t.emp_id
+        from ACTIVE_USER t, REGISTER_USER x
+        where t.emp_id = x.emp_id
+          and t.system_info_id = #{systemId}
+          and x.system_info_id = #{systemId}
+          and trunc(x.register_date) &lt;= to_date(#{theDate}, 'yyyy-MM-dd')
+          and trunc(t.active_date) = to_date(#{theDate}, 'yyyy-MM-dd')
+        group by t.emp_id
+        order by t.emp_id asc
+    </select>
+
+    <!-- StatisticMapper【07】查询某系统某天的闲置用户 -->
+    <select id="listInactiveUser" resultType="String">
+        select r.emp_id
+        from REGISTER_USER r
+        where r.system_info_id = #{systemId}
+          and trunc(r.register_date) &lt;= to_date(#{theDate}, 'yyyy-MM-dd')
+          and r.emp_id not in
+              (select t.emp_id
+               from ACTIVE_USER t, REGISTER_USER x
+               where t.emp_id = x.emp_id
+                 and t.system_info_id = #{systemId}
+                 and x.system_info_id = #{systemId}
+                 and trunc(x.register_date) &lt;= to_date(#{theDate}, 'yyyy-MM-dd')
+                 and trunc(t.active_date) = to_date(#{theDate}, 'yyyy-MM-dd')
+               group by t.emp_id)
+        order by r.emp_id asc
+    </select>
+
+    <!-- StatisticMapper【08】查询某系统某个时间段的活跃用户 -->
+    <select id="listActiveUserByTimePeriod" resultType="String">
+        select t.emp_id
+        from ACTIVE_USER t, REGISTER_USER x
+        where t.emp_id = x.emp_id
+        and t.system_info_id = #{systemId}
+        and x.system_info_id = #{systemId}
+        and trunc(x.register_date) &lt; to_date(#{endDate}, 'yyyy-MM-dd')
+        and t.active_date >= to_date(#{startDate}, 'yyyy-MM-dd')
+        and t.active_date &lt; to_date(#{endDate}, 'yyyy-MM-dd')
+        group by t.emp_id
+        order by t.emp_id asc
+    </select>
+
+    <!-- StatisticMapper【09】查询某系统某段时间的闲置用户 -->
+    <select id="listInactiveUserByTimePeriod" resultType="String">
+        select r.emp_id
+        from REGISTER_USER r
+        where r.system_info_id = #{systemId}
+        and trunc(r.register_date) &lt; to_date(#{endDate}, 'yyyy-MM-dd')
+        and r.emp_id not in
+        (select t.emp_id
+        from ACTIVE_USER t, REGISTER_USER x
+        where t.emp_id = x.emp_id
+        and t.system_info_id = #{systemId}
+        and x.system_info_id = #{systemId}
+        and trunc(x.register_date) &lt; to_date(#{endDate}, 'yyyy-MM-dd')
+        and t.active_date >= to_date(#{startDate}, 'yyyy-MM-dd')
+        and t.active_date &lt; to_date(#{endDate}, 'yyyy-MM-dd')
+        group by t.emp_id)
+        order by r.emp_id asc
+    </select>
+
+    <!-- StatisticMapper【10】根据工号查询用户信息 -->
+    <!--suppress SqlResolve -->
+    <select id="queryUserInfo" parameterType="String" resultType="com.foxconn.mcebg.portal.model.vo.UserInfoVO">
+        select t.empno       emp_id,
+               t.person_name emp_name,
+               t.sex,
+               t.post_no,
+               t.dept_no,
+               t.hum_factory,
+               t.factory
+        from B_STAFF@HUMAN_DB t
+        where t.empno = #{empId}
+    </select>
+
+    <!-- StatisticMapper【11】根据部门代码查询部门名称 -->
+    <!--suppress SqlResolve -->
+    <select id="queryDeptName" resultType="String">
+        select t.dept_name
+        from B_DEPT@HUMAN_DB t
+        where t.use_flag = 'Y'
+          and t.dept_no = #{deptNo}
+          and t.factory = #{factory}
+    </select>
+
+    <!-- StatisticMapper【12】根据姓名查询用户信息 -->
+    <!--suppress SqlResolve -->
+    <select id="queryUserInfoByName" parameterType="String" resultType="com.foxconn.mcebg.portal.model.vo.UserInfoVO">
+        select t.empno       emp_id,
+               t.person_name emp_name,
+               t.sex,
+               t.post_no,
+               t.dept_no,
+               t.hum_factory,
+               t.factory
+        from B_STAFF@HUMAN_DB t
+        where t.person_name = #{empName}
+        order by t.empno asc
+    </select>
+
+    <!-- StatisticMapper【13】根据系统id查询系统表app表关联表中的app -->
+    <select id="listMobileApp" parameterType="String" resultType="com.foxconn.mcebg.portal.model.MobileAppInfoDO">
+        select a.*
+        from SYSTEM_APP_REL t, MOBILE_APP_INFO a
+        where t.mobile_app_info_id = a.id
+          and t.system_info_id = #{systemId}
+          and t.valid_flag = 1
+          and a.valid_flag = 1
+        order by a.CREATE_TIME desc
+    </select>
+
+    <!-- 模板 -->
+</mapper>

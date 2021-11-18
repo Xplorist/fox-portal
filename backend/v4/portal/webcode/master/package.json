@@ -1,0 +1,43 @@
+{
+  "private": true,
+  "scripts": {
+    "start": "umi dev",
+    "build": "umi build && %npm_package_winshell_copy% && %npm_package_winshell_move% && %npm_package_winshell_refresh%",
+    "postinstall": "umi generate tmp",
+    "prettier": "prettier --write '**/*.{js,jsx,tsx,ts,less,md,json}'",
+    "test": "umi-test",
+    "test:coverage": "umi-test --coverage"
+  },
+  "winshell": {
+    "copy": "copy \"dist\\index.html\" \"..\\..\\src\\main\\resources\\templates\\error\\404.html\" && copy \"dist\\index.html\" \"..\\..\\src\\main\\resources\\templates\"",
+    "move": "move \"dist\\index.html\" \"..\\..\\src\\main\\resources\\static\"",
+    "refresh": "rmdir /S/Q \"..\\..\\src\\main\\resources\\static\\master\" && move dist \"..\\..\\src\\main\\resources\\static\\master\""
+  },
+  "gitHooks": {
+    "pre-commit": "lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,jsx,less,md,json}": [
+      "prettier --write"
+    ],
+    "*.ts?(x)": [
+      "prettier --parser=typescript --write"
+    ]
+  },
+  "dependencies": {
+    "@types/nprogress": "^0.2.0",
+    "@umijs/preset-react": "1.x",
+    "@umijs/test": "^3.1.1",
+    "axios": "^0.19.2",
+    "lint-staged": "^10.0.7",
+    "mqtt": "^4.0.0",
+    "prettier": "^1.19.1",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "umi": "^3.1.1",
+    "yorkie": "^2.0.0"
+  },
+  "devDependencies": {
+    "@umijs/plugin-qiankun": "^2.2.0-0"
+  }
+}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity5">
+    <head>
+        <title>Hello World!</title>
+    </head>
+    <body onload="sendLogout()">
+        <p th:text="${session.logout_uri}"></p>
+        <a th:href="@{${session.logout_uri}}">logout</a>
+        <button onclick="sendLogout()">sendLogout</button>
+    </body>
+    <script th:inline="javascript">
+        function sendLogout () {
+
+            $.ajax({
+                url : "/portal/hellox",
+                data : '',
+                //dataType : 'json',
+                type : 'post',
+                async : true,
+                error : function(XMLHttpRequest, textStatus, errorThrown) {
+                    console.log(textStatus);
+                    alert("請求失敗");
+                },
+                success : function(response) {
+                    //alert(response);
+                    //window.open('/portal/hello', 'newwindow', 'height=560,width=685,top=150,left=300,toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no');
+                    window.open([[${session.logout_uri}]], '退出登录', 'height=560,width=685,top=150,left=300,toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no');
+                    /*
+                    var script = document.createElement("script");
+                    script.type = 'text/javascript';
+                    script.src = [[${session.logout_uri}]];
+                    document.head.appendChild(script);
+                    */
+
+                    //window.location.href = [[${session.redirect_uri}]];
+                }
+            });
+        }
+    </script>
+    <script type="text/javascript" src="/portal/js/jquery-1.12.1.js"></script>
+</html>

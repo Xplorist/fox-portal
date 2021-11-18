@@ -1,0 +1,12 @@
+{
+  "originUrl": "http://127.0.0.1:8080/portal/v2/api-docs?group=2.X版本",
+  "templatePath": "./config/pont",
+  "outDir": "./src/http",
+  "surrounding": "typeScript",
+  "mocks": {
+    "enable": true,
+    "port": 8085,
+    "wrapper": "{response}"
+  },
+  "templateType": "fetch"
+}
